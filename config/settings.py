@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # ========================
-# BASE DIR (HARUS DI ATAS)
+# BASE DIR
 # ========================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -38,8 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Custom apps
+    # 'accounts',
     'courses',
 ]
+
+
+# ========================
+# CUSTOM USER MODEL
+# ========================
+# AUTH_USER_MODEL = 'accounts.User'
 
 
 # ========================
@@ -83,7 +90,7 @@ TEMPLATES = [
 
 
 # ========================
-# DATABASE
+# DATABASE (POSTGRESQL)
 # ========================
 DATABASES = {
     'default': {
@@ -112,7 +119,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # INTERNATIONALIZATION
 # ========================
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+
+TIME_ZONE = 'Asia/Jakarta'  # lebih realistis untuk Indonesia
+
 USE_I18N = True
 USE_TZ = True
 

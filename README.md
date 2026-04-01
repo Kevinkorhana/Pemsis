@@ -1,3 +1,5 @@
+# Progress 1 : Simple LMS - Docker & Django Foundation
+
 ## Cara Menjalankan Project
 1. Run Environment  File :
 'cp .env.example .env'
@@ -26,3 +28,33 @@ http://localhost:8000/admin/
 ![Django](screenshots/Django.png)
 ![AdminDjango](screenshots/AdminDjango.png)
 
+---
+
+# Progress 2: Database Design & ORM
+
+## Data Models
+- User + Profile (Role)
+- Category (hierarchy)
+- Course
+- Lesson
+- Enrollment
+- Progress
+
+## Query Optimization
+
+### Tanpa Optimization (N+1 Problem)
+Jumlah query: 4
+
+### Dengan Optimization
+Jumlah query: 1
+
+## Fixtures
+Data awal diexport menggunakan:
+docker compose exec web python manage.py dumpdata > fixtures.json
+
+```bash
+screenshots/
+├── AdminDjango.png
+├── course.png
+├── query.png
+├── profiles.png
