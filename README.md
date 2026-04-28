@@ -58,3 +58,37 @@ screenshots/
 ├── course.png
 ├── query.png
 ├── profiles.png
+
+
+# Progress 3: JWT Authentication & RBAC (Role-Based Access Control)
+
+Pada tahap ini, sistem telah dilengkapi dengan sistem keamanan token dan pemisahan akses berdasarkan peran pengguna (**student**, **instructor**, dan **admin**).
+
+## Fitur Baru
+* **JWT Authentication**: Login aman menggunakan *Access Token* (60 menit) dan *Refresh Token* (7 hari).
+* **Role-Based Access Control (RBAC)**: Pembatasan akses API menggunakan dekorator khusus (`@is_instructor`, `@is_student`).
+* **Automated API Documentation**: Dokumentasi interaktif menggunakan Swagger UI melalui Django Ninja.
+* **PostgreSQL Integration**: Implementasi database produksi menggunakan PostgreSQL lokal.
+
+## API Endpoints
+
+### Authentication
+| Method | Endpoint | Deskripsi |
+|:--- |:--- |:--- |
+| POST | `/api/auth/register` | Pendaftaran pengguna baru |
+| POST | `/api/auth/login` | Mendapatkan JWT Access & Refresh Token |
+| GET | `/api/auth/me` | Melihat profil pengguna yang sedang login |
+
+### Courses & Enrollments
+| Method | Endpoint | Deskripsi | Proteksi |
+|:--- |:--- |:--- |:--- |
+| GET | `/api/courses/` | Melihat semua daftar kursus | Public |
+| POST | `/api/courses/` | Membuat kursus baru | Instructor Only |
+| DELETE | `/api/courses/{id}` | Menghapus kursus tertentu | Owner/Admin |
+| POST | `/api/courses/enrollments` | Mendaftar ke kursus | Student Only |
+| GET | `/api/courses/enrollments/my-courses` | Daftar kursus yang diikuti | Student Only |
+
+## Screenshot Progress 3
+
+### Swagger API Documentation
+![Swagger API](screenshots/swagger.png)
