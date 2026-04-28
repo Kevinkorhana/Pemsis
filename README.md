@@ -52,14 +52,11 @@ Jumlah query: 1
 Data awal diexport menggunakan:
 docker compose exec web python manage.py dumpdata > fixtures.json
 
-```bash
-screenshots/
-├── AdminDjango.png
-├── course.png
-├── query.png
-├── profiles.png
+### Screnshots Progress 2
+![Query Optimization](screenshots/query.png)
+![Course Model](screenshots/course.png)
+![Profiles Model](screenshots/profiles.png)
 
-```
 
 
 # Progress 3: JWT Authentication & RBAC (Role-Based Access Control)
