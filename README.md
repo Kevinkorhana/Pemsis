@@ -59,6 +59,8 @@ screenshots/
 ├── query.png
 ├── profiles.png
 
+```
+
 
 # Progress 3: JWT Authentication & RBAC (Role-Based Access Control)
 
@@ -73,20 +75,20 @@ Pada tahap ini, sistem telah dilengkapi dengan sistem keamanan token dan pemisah
 ## API Endpoints
 
 ### Authentication
-| Method | Endpoint | Deskripsi |
-|:--- |:--- |:--- |
-| POST | `/api/auth/register` | Pendaftaran pengguna baru |
-| POST | `/api/auth/login` | Mendapatkan JWT Access & Refresh Token |
-| GET | `/api/auth/me` | Melihat profil pengguna yang sedang login |
+| Method | Endpoint             | Deskripsi                                 |
+|:---    |:---                  |:---                                       |
+| POST   | `/api/auth/register` | Pendaftaran pengguna baru                 |
+| POST   | `/api/auth/login`    | Mendapatkan JWT Access & Refresh Token    |
+| GET    | `/api/auth/me`       | Melihat profil pengguna yang sedang login |
 
 ### Courses & Enrollments
-| Method | Endpoint | Deskripsi | Proteksi |
-|:--- |:--- |:--- |:--- |
-| GET | `/api/courses/` | Melihat semua daftar kursus | Public |
-| POST | `/api/courses/` | Membuat kursus baru | Instructor Only |
-| DELETE | `/api/courses/{id}` | Menghapus kursus tertentu | Owner/Admin |
-| POST | `/api/courses/enrollments` | Mendaftar ke kursus | Student Only |
-| GET | `/api/courses/enrollments/my-courses` | Daftar kursus yang diikuti | Student Only |
+| Method | Endpoint                              | Deskripsi                   | Proteksi        |
+|:---    |:---                                   |:---                         |:---             |
+| GET    | `/api/courses/`                       | Melihat semua daftar kursus | Public          |
+| POST   | `/api/courses/`                       | Membuat kursus baru         | Instructor Only |
+| DELETE | `/api/courses/{id}`                   | Menghapus kursus tertentu   | Owner/Admin     |
+| POST   | `/api/courses/enrollments`            | Mendaftar ke kursus         | Student Only    |
+| GET    | `/api/courses/enrollments/my-courses` | Daftar kursus yang diikuti  | Student Only    |
 
 ## Screenshot Progress 3
 
