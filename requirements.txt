@@ -22,3 +22,8 @@ sqlparse==0.5.5
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2026.2
+celery==5.4.0
+redis==5.0.4
+django-redis==6.0.0
+django-ratelimit==4.1.0
+pymongo==4.7.2  

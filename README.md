@@ -91,3 +91,32 @@ Pada tahap ini, sistem telah dilengkapi dengan sistem keamanan token dan pemisah
 
 ### Swagger API Documentation
 ![Swagger API](screenshots/swagger.png)
+
+
+
+# Progress 4: Integrasi Sistem Terdistribusi & Arsitektur Modern
+
+Pada tahap ini, sistem aplikasi LMS telah ditingkatkan performanya menggunakan arsitektur multi-container terintegrasi untuk menangani caching data cepat, pemisahan data analitik, serta pemrosesan tugas intensif di latar belakang (*asynchronous tasks*).
+
+## Fitur Baru
+* **Redis Caching**: Mengurangi beban pembacaan database PostgreSQL dengan skema in-memory caching pada daftar dan detail kursus.
+* **Rate Limiting**: Membatasi laju permintaan client maksimal **60 requests/minute** berbasis alamat IP untuk mencegah eksploitasi API.
+* **NoSQL Document Storage**: Logging jejak aktivitas analitik pengguna menggunakan MongoDB secara terisolasi.
+* **Asynchronous & Scheduled Tasks**: Manajemen antrean tugas latar belakang dan penjadwalan otomatis menggunakan Celery dan RabbitMQ.
+* **Live Monitoring UI**: Dasbor visual berbasis web menggunakan Flower untuk mengontrol kinerja antrean Celery worker.
+
+## Diagram Arsitektur Aplikasi
+Aplikasi menggunakan RabbitMQ sebagai broker pesan utama untuk menghubungkan Django dengan pekerja latar belakang Celery, sementara Redis menangani penyimpanan cache volatil dan MongoDB mengelola data log analitik terpisah dari database relasional PostgreSQL.
+
+```mermaid
+graph TD
+    User([Client / Browser]) -->|HTTP Request| Web[Django Web Server - Port 8000]
+    Web -->|Cache Check / Rate Limit| Redis[(Redis Cache - Port 6379)]
+    Web -->|Relational Data| Postgres[(PostgreSQL DB - Port 5432)]
+    Web -->|Write Activity Logs| MongoDB[(MongoDB - Port 27017)]
+    Web -->|Publish Task| RabbitMQ{RabbitMQ Broker - Port 5672}
+    
+    Beat[Celery Beat Scheduler] -->|Trigger Scheduled Tasks| RabbitMQ
+    RabbitMQ -->|Dispatch| Worker[Celery Background Worker]
+    Worker -->|Execute Async Tasks| Postgres
+    Worker -->|Log Status| Flower[Flower Dashboard - Port 5555]

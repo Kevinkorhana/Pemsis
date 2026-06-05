@@ -42,21 +42,38 @@ def register(request, data: RegisterSchema):
 def login(request, data: LoginSchema):
     user = authenticate(username=data.username, password=data.password)
     if user:
-        # Tambahkan role ke dalam token agar bisa dicek oleh decorator RBAC nanti
-        access = create_access_token({"user_id": user.id, "role": user.profile.role})
+        try:
+            # Skenario Aman 1: Jika model Profile menggunakan field custom (misal id-nya sama dengan user_id)
+            profile, created = Profile.objects.get_or_create(
+                id=user.id,
+                defaults={'role': 'admin' if user.is_superuser else 'student'}
+            )
+            role = profile.role
+        except Exception:
+            # Skenario Aman 2 (FALLBACK): Jika tabel Profile benar-benar kosong/kaku,
+            # bypass langsung rolenya tanpa memaksa query ke database agar tidak crash 500!
+            role = 'admin' if user.is_superuser else 'student'
+            
+        access = create_access_token({"user_id": user.id, "role": role})
         refresh = create_refresh_token({"user_id": user.id})
         return {"access": access, "refresh": refresh}
     
-    raise HttpError(401, "Invalid credentials") # Gunakan raise untuk HttpError
+    raise HttpError(401, "Invalid credentials")
 
 @router.get("/me", auth=AuthBearer())
 def me(request):
+    try:
+        profile = Profile.objects.filter(id=request.auth.id).first()
+        role = profile.role if profile else ('admin' if request.auth.is_superuser else 'student')
+    except Exception:
+        role = 'admin' if request.auth.is_superuser else 'student'
+        
     return {
         "username": request.auth.username,
         "email": request.auth.email,
-        "role": request.auth.profile.role
+        "role": role
     }
-
+    
 @router.post("/refresh")
 def refresh_token(request, data: TokenRefreshSchema):
     from .jwt import refresh_access_token

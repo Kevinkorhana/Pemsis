@@ -146,3 +146,41 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # DEFAULT PK
 # ========================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ========================
+# REDIS CACHING INTEGRATION
+# ========================
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Waktu kedaluwarsa data di memori Redis (15 Menit)
+CACHE_TTL = 60 * 15
+
+
+# ========================
+# CELERY & RABBITMQ CONFIGURATION
+# ========================
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "amqp://guest:guest@rabbitmq:5672//")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE  # Menyelaraskan timezone dengan Asia/Jakarta
+
+# --- DELIVERABLE: CELERY BEAT SCHEDULE (TUGAS BERKALA) ---
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'update-course-stats-every-hour': {
+        'task': 'courses.tasks.update_course_statistics', # Menyesuaikan path karena folder 'apps' sudah di-insert ke sys.path
+        'schedule': crontab(minute=0),  # Berjalan otomatis tepat setiap jam baru
+    },
+}
