@@ -26,7 +26,6 @@ Project ini merupakan pengembangan lanjutan dari *Simple Learning Management Sys
 * **LMS Fundamental Endpoints**: Ketersediaan API endpoint dasar yang matang untuk manajemen siklus hidup `course`, proses `enrollment`, serta pelacakan `progress` materi.
 
 ## 3. Fitur Tambahan yang Dipilih (Paket 4 - Performance & API Quality)
-Sesuai dengan ketentuan, berikut adalah daftar fitur lanjutan yang berhasil diimplementasikan pada project ini:
 
 | No | Fitur Tambahan                           | Kategori              | Poin | Status                   |
 |----|------------------------------------------|-----------------------|------|--------------------------|
