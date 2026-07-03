@@ -38,18 +38,11 @@ Project ini merupakan pengembangan lanjutan dari *Simple Learning Management Sys
 
 ## 4. Penjelasan Implementasi Fitur Tambahan
 
-### A. Filter, Search, Sort, dan Pagination pada List Course
-Endpoint `GET /api/courses/` dimodifikasi menggunakan `CourseFilterSchema`. Pengguna dapat mencari course berdasarkan kata kunci (`search`), menyaring berdasarkan tingkat kesulitan (`level`), dan mengurutkannya (`sort_by`) secara dinamis dengan query SQL yang dioptimalkan menggunakan parameter `limit` dan `offset`.
-
-### B. Redis Caching & Invalidation Strategy
-* **Caching**: Detail course (`GET /api/courses/{course_id}`) dibungkus menggunakan Redis Cache (`cache.get`/`cache.set`) dengan TTL 15 menit. Request berulang terhadap data yang sama tidak akan membebani database PostgreSQL, melainkan langsung ditarik secara instan dari RAM Redis (*Cache Hit*).
-* **Invalidation**: Guna menghindari data basi (*stale data*), fungsi helper `clear_course_cache()` akan dipicu secara otomatis untuk menghapus cache di Redis setiap kali Instructor melakukan aksi pembuatan, pembaruan (*patch*), atau penghapusan (*delete*) course.
-
-### C. Asynchronous Task & Notification via Celery
-Proses pengiriman email notifikasi saat mahasiswa mendaftar kursus (`POST /api/courses/enrollments`) dilempar ke background worker Celery menggunakan perintah `.delay()`. Hal ini memangkas waktu respons API secara ekstrem karena server tidak perlu tertahan menunggu proses jaringan eksternal selesai.
-
-### D. Flower Monitoring Integration
-Dashboard monitoring Flower diintegrasikan ke dalam berkas `docker-compose.yml` pada port `5555` untuk mengamati status keberhasilan, kegagalan, dan statistik beban antrean task yang dikerjakan oleh Celery worker secara real-time.
+*   **1. Redis caching untuk course**: Mengurangi latensi pembacaan database PostgreSQL pada endpoint detail kursus (`GET /api/courses/{course_id}`) dengan menyimpan datanya ke dalam memori RAM Redis selama 15 menit sehingga mempercepat respons server saat diakses berulang kali.
+*   **2. Cache invalidation strategy**: Menerapkan fungsi helper `clear_course_cache()` yang otomatis menghapus data cache usang di Redis begitu ada perubahan data berupa pembuatan kelas baru (`POST /api/courses/`) atau pembaruan data (`PATCH /api/courses/{course_id}`), memastikan client selalu mendapatkan data paling mutakhir.
+*   **3. Filter, search, sort, pagination lengkap**: Mengoptimalkan endpoint daftar kursus (`GET /api/courses/`) melalui pencarian kata kunci fleksibel dengan Django `Q` object, pengurutan dinamis (berdasarkan abjad `title` atau data terbaru), serta pembatasan beban data menggunakan pagination (`limit` dan `offset`).
+*   **4. Email notification async via Celery**: Mendelegasikan tugas pengiriman email notifikasi pendaftaran mahasiswa baru (`POST /api/courses/enrollments`) ke antrean latar belakang (*background worker*) Celery melalui broker RabbitMQ, sehingga siklus respons API utama tetap instan tanpa terhambat proses eksternal.
+*   **5. Flower monitoring**: Mengintegrasikan panel dashboard Flower pada port `5555` untuk melacak, mengaudit, dan memantau seluruh jalannya performa antrean tugas asinkron yang dieksekusi oleh Celery secara visual dan *real-time*.
 
 ## 5. Cara Menjalankan Project
 1. Pastikan Docker Desktop sudah aktif di komputer Anda.
