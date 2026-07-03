@@ -87,4 +87,4 @@ Project ini merupakan pengembangan lanjutan dari *Simple Learning Management Sys
 * **Solusi**: Menghentikan kontainer latihan lama yang sudah tidak digunakan menggunakan `docker stop` atau mengalihkan port pemetaan eksternal agar seluruh ekosistem kontainer utama *Simple LMS* dapat mengunci jalurnya dengan aman tanpa bentrokan.
 
 ## 10. Kesimpulan
-Melalui pengerjaan Final Project ini, pengembang berhasil memahami secara mendalam arsitektur backend berskala production. Integrasi Redis terbukti memangkas latensi pembacaan data, sementara arsitektur asynchronous menggunakan Celery dan RabbitMQ menjaga aplikasi tetap responsif. Ditambah dengan isolasi lingkungan Docker Compose, sistem menjadi sangat mudah di-deploy dan dikelola.
+Melalui pengerjaan Final Project ini, saya berhasil memahami secara mendalam arsitektur backend berskala production. Integrasi Redis terbukti memangkas latensi pembacaan data, sementara arsitektur asynchronous menggunakan Celery dan RabbitMQ menjaga aplikasi tetap responsif. Ditambah dengan isolasi lingkungan Docker Compose, sistem menjadi sangat mudah di-deploy dan dikelola.
