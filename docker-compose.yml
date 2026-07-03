@@ -1,7 +1,7 @@
 version: '3.9'
 
 services:
-  # 1. Database Utama (PostgreSQL - Bawaan Anda)
+  # 1. Database Utama (PostgreSQL)
   db:
     image: postgres:15
     container_name: lms_db
@@ -15,7 +15,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # 2. Redis untuk Caching & Rate Limiting (Baru)
+  # 2. Redis untuk Caching & Rate Limiting
   redis:
     image: redis:7-alpine
     container_name: lms_redis
@@ -25,7 +25,7 @@ services:
     volumes:
       - redis_data:/data
 
-  # 3. MongoDB untuk Activity Logs (Baru)
+  # 3. MongoDB untuk Activity Logs
   mongodb:
     image: mongo:7
     container_name: lms_mongodb
@@ -38,19 +38,19 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # 4. RabbitMQ sebagai Message Broker Celery (Baru)
+  # 4. RabbitMQ sebagai Message Broker Celery
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: lms_rabbitmq
     restart: always
     ports:
-      - "5672:5672"       # Port untuk worker
+      - "5672:5672"       # Port untuk worker komunikasi
       - "15672:15672"     # Web dashboard panel RabbitMQ
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
 
-  # 5. Aplikasi Utama Django (Web - Diperbarui dependensinya)
+  # 5. Aplikasi Utama Django (Web)
   web:
     build: .
     container_name: lms_web
@@ -67,7 +67,7 @@ services:
     env_file:
       - .env
 
-  # 6. Celery Worker - Mengeksekusi Task Async (Baru)
+  # 6. Celery Worker - Mengeksekusi Task Async
   celery-worker:
     build: .
     container_name: lms_celery_worker
@@ -80,7 +80,7 @@ services:
     env_file:
       - .env
 
-  # 7. Celery Beat - Scheduler Tugas Berkala (Baru)
+  # 7. Celery Beat - Scheduler Tugas Berkala
   celery-beat:
     build: .
     container_name: lms_celery_beat
@@ -92,6 +92,7 @@ services:
     env_file:
       - .env
 
+  # 8. Flower - Celery Monitoring Tool (8 Poin)
   flower:
     image: mher/flower:latest
     container_name: lms_flower
@@ -104,9 +105,7 @@ services:
       - rabbitmq
       - redis
 
-# ==========================================
-# TAMBAHKAN BLOK INI DI BAGIAN PALING BAWAH:
-# ==========================================
+# Persistent Storage Mapping Configuration
 volumes:
   postgres_data:
   redis_data:

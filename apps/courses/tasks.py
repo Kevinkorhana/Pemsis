@@ -1,22 +1,26 @@
 import csv
 import datetime
+import time
 from celery import shared_task
 from django.contrib.auth.models import User
 from .models import Course, Enrollment
 
-# Task 1: Asynchronous Email Sending
+# Task 1: Asynchronous Email Sending (Async Notification)
 @shared_task
 def send_enrollment_email(student_email, course_title):
     print("--- [CELERY WORKER] MEMICU TASK EMAIL ---")
+    # Simulasi overhead pengiriman email jaringan luar selama 3 detik
+    time.sleep(3)
     return f"Notifikasi email sukses dikirim ke {student_email} untuk kelas {course_title}"
 
 # Task 2: Asynchronous Certificate Generation
 @shared_task
 def generate_certificate(student_name, course_title):
     print("--- [CELERY WORKER] PROSES GENERATE SERTIFIKAT ---")
+    time.sleep(2)
     return f"Sertifikat kelulusan kelas '{course_title}' atas nama {student_name} sukses dibuat."
 
-# Task 3: Scheduled Task - Update Course Statistics (Beat)
+# Task 3: Scheduled Task - Update Course Statistics (Celery Beat)
 @shared_task
 def update_course_statistics():
     print("--- [CELERY BEAT] SEEDING STATISTIK KURSUS ---")

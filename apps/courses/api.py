@@ -1,21 +1,26 @@
-from ninja import Router, Schema
-from typing import List
+from ninja import Router, Schema, Query
+from typing import List, Optional
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
+from django.db.models import Q
 from django_ratelimit.decorators import ratelimit
 from ninja.errors import HttpError
+import json
 
-# Import bawaan dari proyek Anda (Progress 3)
+# Import bawaan dari proyek Anda
 from .models import Course, Enrollment, Progress
 from apps.authentication.jwt import AuthBearer
 from apps.authentication.permissions import is_instructor
 
-# Import baru untuk Progress 4 (Celery & MongoDB)
+# Import Celery & MongoDB dari Progress 4
 from .tasks import send_enrollment_email, generate_certificate, export_course_report
 from core.mongodb import mongo_logger 
 
 router = Router(tags=["Courses"])
 
+# ==========================================
+# SCHEMA DEFINITIONS
+# ==========================================
 class CourseSchema(Schema):
     id: int = None
     title: str
@@ -25,13 +30,18 @@ class CourseSchema(Schema):
 class EnrollmentSchema(Schema):
     course_id: int
 
+# Schema Baru untuk Filtering, Search, & Sorting (Diperbaiki: Tanpa field level)
+class CourseFilterSchema(Schema):
+    search: Optional[str] = None
+    sort_by: Optional[str] = "newest"  # Pilihan: newest, title
 
 # ==========================================
 # HELPER: CACHE INVALIDATION STRATEGY
 # ==========================================
 def clear_course_cache(course_id=None):
-    """Menghapus cache di Redis saat data berubah agar tidak basi"""
-    cache.delete("all_courses_cache")
+    """Menghapus cache di Redis saat data berubah agar tidak basi (Invalidation Strategy)"""
+    # Karena kita menggunakan pagination dinamis, kita bersihkan cache berbasis pola atau cache utama
+    cache.delete_pattern("all_courses_cache_*") if hasattr(cache, "delete_pattern") else cache.clear()
     if course_id:
         cache.delete(f"course_detail_{course_id}")
 
@@ -40,29 +50,43 @@ def clear_course_cache(course_id=None):
 # KELOMPOK 1: ENDPOINT DENGAN PATH STATIS (POSISI ATAS)
 # ========================================================
 
-# GET: List Courses (Redis Cached & Rate Limited)
+# GET: List Courses (Redis Cached, Paginated, Filtered, & Rate Limited)
 @router.get("/", response=List[CourseSchema])
-@ratelimit(key='ip', rate='60/m', block=True)  # Rate limiting 60 requests/minute
-def list_courses(request, limit: int = 10, offset: int = 0):
-    # Buat cache_key dinamis berdasarkan offset dan limit pagination
-    cache_key = f"all_courses_cache_offset_{offset}_limit_{limit}"
+@ratelimit(key='ip', rate='60/m', block=True)
+def list_courses(request, filters: CourseFilterSchema = Query(...), limit: int = 10, offset: int = 0):
+    # Buat cache_key dinamis berdasarkan filter (tanpa level), offset, dan limit pagination
+    cache_key = f"all_courses_cache_search_{filters.search}_sort_{filters.sort_by}_offset_{offset}_limit_{limit}"
     cached_courses = cache.get(cache_key)
     
     if cached_courses:
-        return cached_courses  # Ambil instan dari Redis jika ada
+        return json.loads(cached_courses) if isinstance(cached_courses, str) else cached_courses
         
-    # Jika tidak ada, ambil dari PostgreSQL
-    courses = list(Course.objects.all()[offset:offset+limit])
+    # Ambil queryset dasar dari PostgreSQL
+    queryset = Course.objects.all()
+    
+    # Fitur Tambahan: Pencarian Lanjutan (Search)
+    if filters.search:
+        queryset = queryset.filter(
+            Q(title__icontains=filters.search) | Q(description__icontains=filters.search)
+        )
+        
+    # Fitur Tambahan: Pengurutan (Sorting)
+    if filters.sort_by == "title":
+        queryset = queryset.order_by("title")
+    else:
+        queryset = queryset.order_by("-id")  # Default: Newest berdasarkan ID
+        
+    # Terapkan Pagination
+    paginated_queryset = list(queryset[offset:offset+limit])
     
     # Simpan ke Redis cache selama 15 menit
-    cache.set(cache_key, courses, timeout=60*15)
-    return courses
+    cache.set(cache_key, paginated_queryset, timeout=60*15)
+    return paginated_queryset
 
 
 # POST: Export Report (Celery Async CSV Export)
 @router.post("/export-report", auth=AuthBearer())
 def trigger_report_export(request):
-    # Mempercepat respon dengan melempar pembuatan laporan CSV ke Celery task
     task = export_course_report.delay()
     return {
         "message": "Proses ekspor laporan CSV sedang berjalan di background worker.",
@@ -88,16 +112,16 @@ def enroll_to_course(request, data: EnrollmentSchema):
         details={"course_id": data.course_id, "course_title": enroll.course.title}
     )
     
-    # 2. Celery Task Integration: Kirim email di latar belakang (Async)
+    # 2. Celery Task Integration: Kirim email asinkronus (Async Notification)
     send_enrollment_email.delay(request.auth.email, enroll.course.title)
     
     return {"message": "Pendaftaran berhasil"}
 
 
-# GET: My Courses Dashboard (Bawaan Progress 3)
+# GET: My Courses Dashboard
 @router.get("/enrollments/my-courses", auth=AuthBearer())
 def my_courses(request):
-    enrollments = Enrollment.objects.filter(student=request.auth).for_student_dashboard()
+    enrollments = Enrollment.objects.filter(student=request.auth)
     return [
         {
             "id": e.id,
@@ -116,7 +140,7 @@ def mark_lesson_complete(request, lesson_id: int):
         defaults={'completed': True}
     )
     
-    # Celery Task Integration: Simulasi pemicu pembuatan sertifikat asinkronus
+    # Celery Task Integration: Pemicu pembuatan sertifikat asinkronus
     generate_certificate.delay(request.auth.username, "Kursus Pilihan LMS")
     
     return {"status": "Lesson completed"}
@@ -131,7 +155,7 @@ def create_course(request, data: CourseSchema):
         instructor=request.auth
     )
     
-    # Cache Invalidation: Hapus cache list karena ada kelas baru
+    # Cache Invalidation: Bersihkan cache list karena ada kelas baru
     clear_course_cache()
     return {"id": course.id, "title": course.title}
 
@@ -141,28 +165,32 @@ def create_course(request, data: CourseSchema):
 # ========================================================
 
 # GET: Course Detail (Redis Cached & MongoDB Activity Log)
+# GET: Course Detail (Redis Cached & MongoDB Activity Log)
 @router.get("/{course_id}", response=CourseSchema)
 @ratelimit(key='ip', rate='60/m', block=True)
 def get_course_detail(request, course_id: int):
     cache_key = f"course_detail_{course_id}"
     cached_course = cache.get(cache_key)
     
-    # Ambil object dari Postgres jika cache kosong
+    # Ambil object dari Postgres jika cache kosong (Cache Miss)
     if not cached_course:
         cached_course = get_object_or_404(Course, id=course_id)
         cache.set(cache_key, cached_course, timeout=60*15)
     
-    # MongoDB Integration: Catat log siswa yang melihat detail kelas
-    if request.auth:  # Cek jika menggunakan token AuthBearer
+    # FIX: Gunakan hasattr() untuk mengecek apakah request memiliki atribut 'auth'
+    # Ini mencegah AttributeError ketika diakses oleh user anonim/belum login
+    user_auth = request.auth if hasattr(request, 'auth') else None
+    
+    # MongoDB Integration: Catat log siswa yang melihat detail kelas (Hanya jika login)
+    if user_auth:
         mongo_logger.log_activity(
-            user_id=request.auth.id,
-            username=request.auth.username,
+            user_id=user_auth.id,
+            username=user_auth.username,
             activity_type="VIEW_COURSE",
             details={"course_id": course_id, "course_title": cached_course.title}
         )
         
     return cached_course
-
 
 # PATCH: Update Course (Instructor Owner + Invalidation)
 @router.patch("/{course_id}", auth=AuthBearer())
