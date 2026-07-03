@@ -60,7 +60,7 @@ Project ini merupakan pengembangan lanjutan dari *Simple Learning Management Sys
 
 ## 7. Endpoint Penting untuk Diuji
 * **Dokumentasi Swagger**: `http://localhost:8000/api/docs`
-* **List Course (Filter & Search)**: `GET /api/courses/?search=python&level=beginner&sort_by=title`
+* **List Course (Filter & Search)**: `GET /api/courses/?search=python&sort_by=title`
 * **Detail Course (Redis Cache)**: `GET /api/courses/{id}`
 * **Trigger Enroll (Celery Email)**: `POST /api/courses/enrollments`
 * **Flower Dashboard**: `http://localhost:5555`
